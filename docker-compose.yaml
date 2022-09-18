@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+    web:
+        image: nginx:latest
+        ports:
+            - "80:80"
+        volumes:
+            - ./config/nginx/default.conf:/etc/nginx/conf.d/default.conf
+            - docker-deluge-data:/home/deluge
+        links:
+            - php-fpm
+            - deluge
+        networks:
+            - docker-deluge-network    
+    php-fpm:
+        build: './config/php'
+        volumes:
+            - docker-deluge-data:/home/deluge
+        networks:
+            - docker-deluge-network 
+    deluge:
+        build: './config/deluge'
+        ports:
+            - "8112:8112"
+            - "58846:58846"
+            - "58846:58846/udp"
+        volumes:
+            - ./config/deluge/core.conf:/config/core.conf
+            - docker-deluge-data:/home/deluge       
+        environment:
+            - PUID=1000
+            - PGID=1000
+            - TZ=Europe/London
+            - UMASK_SET=022
+            - DELUGE_LOGLEVEL=info
+        restart: "no"
+        networks:
+            - docker-deluge-network
+volumes:
+  docker-deluge-data:
+    driver: local
+networks:
+    docker-deluge-network:
+        driver: bridge
